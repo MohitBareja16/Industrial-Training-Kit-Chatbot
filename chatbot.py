@@ -37,3 +37,9 @@ KNOWLEDGE_BASE = {
     "bye":           "Goodbye! (Type 'quit' to actually exit.)",
     "goodbye":       "See you! (Type 'quit' to end the session.)",
 }
+
+# ── SECTION 3: CORE LOGIC ─────────────────────────────────────────────────────
+
+def get_response(clean_input: str) -> str:
+    """Return the response for a normalized input string. O(1) lookup."""
+    return KNOWLEDGE_BASE.get(clean_input, FALLBACK_RESPONSE)
