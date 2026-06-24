@@ -43,3 +43,35 @@ KNOWLEDGE_BASE = {
 def get_response(clean_input: str) -> str:
     """Return the response for a normalized input string. O(1) lookup."""
     return KNOWLEDGE_BASE.get(clean_input, FALLBACK_RESPONSE)
+
+# ── SECTION 4: RUNTIME ────────────────────────────────────────────────────────
+
+def run_chatbot() -> None:
+    """Run the main chatbot loop."""
+    print("=" * 50)
+    print(f"  {BOT_NAME} — Rule-Based AI Chatbot")
+    print(f"  Type 'help' | Type 'quit' to exit")
+    print("=" * 50 + "\n")
+
+    while True:
+        raw_input = input("You: ")
+        clean_input = raw_input.strip().lower()
+
+        if not clean_input:
+            print("Bot: (Please type a message.)\n")
+            continue
+
+        if clean_input in EXIT_COMMANDS:
+            print(f"Bot: Goodbye! Session ended.\n")
+            break
+
+        response = get_response(clean_input)
+        print(f"Bot: {response}\n")
+
+# ── SECTION 5: ENTRYPOINT ─────────────────────────────────────────────────────
+
+if __name__ == "__main__":
+    try:
+        run_chatbot()
+    except KeyboardInterrupt:
+        print("\nBot: Session interrupted. Goodbye!")
