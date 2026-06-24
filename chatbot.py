@@ -17,6 +17,17 @@ FALLBACK_RESPONSE = (
     "Type 'help' to see what I can do."
 )
 
+# Terminal Colors for Aesthetics (No External Libraries)
+class Colors:
+    HEADER = '\033[95m'
+    BLUE = '\033[94m'
+    CYAN = '\033[96m'
+    GREEN = '\033[92m'
+    YELLOW = '\033[93m'
+    RED = '\033[91m'
+    RESET = '\033[0m'
+    BOLD = '\033[1m'
+
 # ── SECTION 2: KNOWLEDGE BASE ─────────────────────────────────────────────────
 
 KNOWLEDGE_BASE = {
@@ -48,25 +59,28 @@ def get_response(clean_input: str) -> str:
 
 def run_chatbot() -> None:
     """Run the main chatbot loop."""
-    print("=" * 50)
-    print(f"  {BOT_NAME} — Rule-Based AI Chatbot")
-    print(f"  Type 'help' | Type 'quit' to exit")
-    print("=" * 50 + "\n")
+    # Print an aesthetically pleasing banner using ANSI colors
+    print(f"{Colors.CYAN}{Colors.BOLD}{'=' * 50}{Colors.RESET}")
+    print(f"{Colors.CYAN}{Colors.BOLD}  {BOT_NAME} — Rule-Based AI Chatbot{Colors.RESET}")
+    print(f"{Colors.BLUE}  Type 'help' | Type 'quit' to exit{Colors.RESET}")
+    print(f"{Colors.CYAN}{Colors.BOLD}{'=' * 50}{Colors.RESET}\n")
 
     while True:
-        raw_input = input("You: ")
+        # Green prompt for the user
+        raw_input = input(f"{Colors.GREEN}{Colors.BOLD}You:{Colors.RESET} ")
         clean_input = raw_input.strip().lower()
 
         if not clean_input:
-            print("Bot: (Please type a message.)\n")
+            print(f"{Colors.YELLOW}Bot: (Please type a message.){Colors.RESET}\n")
             continue
 
         if clean_input in EXIT_COMMANDS:
-            print(f"Bot: Goodbye! Session ended.\n")
+            print(f"{Colors.HEADER}{Colors.BOLD}Bot: Goodbye! Session ended.{Colors.RESET}\n")
             break
 
         response = get_response(clean_input)
-        print(f"Bot: {response}\n")
+        # Blue/Purple prompt for the bot
+        print(f"{Colors.BLUE}{Colors.BOLD}Bot:{Colors.RESET} {response}\n")
 
 # ── SECTION 5: ENTRYPOINT ─────────────────────────────────────────────────────
 
@@ -74,4 +88,4 @@ if __name__ == "__main__":
     try:
         run_chatbot()
     except KeyboardInterrupt:
-        print("\nBot: Session interrupted. Goodbye!")
+        print(f"\n{Colors.RED}{Colors.BOLD}Bot: Session interrupted. Goodbye!{Colors.RESET}")
