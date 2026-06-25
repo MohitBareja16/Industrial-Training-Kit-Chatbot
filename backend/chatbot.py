@@ -76,13 +76,23 @@ KNOWLEDGE_BASE = {
     # Assistance
     "help":          "I can answer questions about AI, chat casually, or tell jokes. Type 'quit' to exit.",
     "what can you do": "I can talk about AI, tell programming jokes, and chat about my existence.",
+
+    # Demo & Platform Explanations
+    "what is decode labs": "DecodeLabs is a premier training lab for advanced software engineering, systems design, and AI/ML pipelines.",
+    "what is decodelabs": "DecodeLabs is a premier training lab for advanced software engineering, systems design, and AI/ML pipelines.",
+    "deterministic": "In deterministic mode, the engine uses strict, O(1) rule-lookup logic to resolve exact matches immediately without statistical variance.",
+    "heuristic": "In heuristic mode, the engine employs rules-of-thumb, regex patterns, or proximity calculations to resolve non-exact matches.",
+    "hybrid pipeline": "A hybrid pipeline chains a deterministic O(1) fast-path with a heuristic model fallback, and finally a LLM pipeline for general queries.",
+    "project 1": "Project 1 is the construction of this deterministic, rule-based logic engine with a premium SaaS-style interface.",
 }
 
 # ── SECTION 3: CORE LOGIC ─────────────────────────────────────────────────────
 
 def get_response(clean_input: str) -> str:
     """Return the response for a normalized input string. O(1) lookup."""
-    return KNOWLEDGE_BASE.get(clean_input, FALLBACK_RESPONSE)
+    # Robustly strip common trailing question marks, exclamations or periods
+    normalized = clean_input.rstrip('?.!')
+    return KNOWLEDGE_BASE.get(normalized, KNOWLEDGE_BASE.get(clean_input, FALLBACK_RESPONSE))
 
 # ── SECTION 4: RUNTIME ────────────────────────────────────────────────────────
 

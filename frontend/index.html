@@ -1,0 +1,1258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Decodes Logic Engine - Deterministic Knowledge Workspace</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #f2e0f4 0%, #e5d2eb 50%, #dcd3f5 100%);
+            --panel-bg: #ffffff;
+            --sidebar-text: #501854;
+            --text-primary: #2d1630;
+            --text-secondary: #76647a;
+            --border-color: rgba(80, 24, 84, 0.08);
+            --border-hover: rgba(157, 50, 102, 0.18);
+            --accent-color: #9d3266;
+            --accent-hover: #b13f78;
+            --accent-light: rgba(157, 50, 102, 0.05);
+            --user-msg-bg: rgba(157, 50, 102, 0.06);
+            --input-bg: #ffffff;
+            --input-border: rgba(80, 24, 84, 0.12);
+            --shadow-sm: 0 2px 8px rgba(80, 24, 84, 0.03);
+            --shadow-md: 0 10px 30px -10px rgba(80, 24, 84, 0.08), 0 1px 3px rgba(80, 24, 84, 0.03);
+            --shadow-lg: 0 20px 40px -15px rgba(80, 24, 84, 0.15);
+            --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+            --font-display: 'Outfit', system-ui, -apple-system, sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: var(--font-sans);
+        }
+
+        body {
+            background: var(--bg-gradient);
+            color: var(--text-primary);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* App Container */
+        .app-container {
+            display: flex;
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        /* Sidebar Styling */
+        .sidebar {
+            width: 260px;
+            display: flex;
+            flex-direction: column;
+            padding: 24px 16px;
+            gap: 20px;
+            flex-shrink: 0;
+            z-index: 10;
+        }
+
+        /* Sidebar settings & Gemini Key panel */
+        .sidebar-settings {
+            margin-top: auto;
+            padding: 16px 8px 8px;
+            border-top: 1px solid rgba(80, 24, 84, 0.08);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .settings-title {
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-secondary);
+            font-weight: 700;
+        }
+
+        .api-key-box {
+            display: flex;
+            gap: 6px;
+        }
+
+        .api-key-box input {
+            flex: 1;
+            padding: 8px 10px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background: #ffffff;
+            font-size: 0.8rem;
+            outline: none;
+            transition: all 0.2s ease;
+            width: 100%;
+        }
+
+        .api-key-box input:focus {
+            border-color: var(--accent-color);
+        }
+
+        .api-key-box button {
+            padding: 8px 12px;
+            background: var(--accent-color);
+            color: #ffffff;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .api-key-box button:hover {
+            background: var(--accent-hover);
+        }
+
+        .llm-status-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .status-dot.online {
+            background-color: #10b981;
+            box-shadow: 0 0 8px #10b981;
+        }
+
+        .status-dot.offline {
+            background-color: #ef4444;
+            box-shadow: 0 0 8px #ef4444;
+        }
+
+        .status-dot.connecting {
+            background-color: #f59e0b;
+            box-shadow: 0 0 8px #f59e0b;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.9); opacity: 0.6; }
+            50% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(0.9); opacity: 0.6; }
+        }
+
+        .logo {
+            font-family: var(--font-display);
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--sidebar-text);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            letter-spacing: -0.5px;
+            padding-left: 8px;
+            user-select: none;
+        }
+
+        .logo strong {
+            font-weight: 700;
+        }
+
+        .logo span {
+            font-weight: 400;
+            opacity: 0.85;
+        }
+
+        .new-chat-btn {
+            background: var(--accent-color);
+            border: none;
+            color: #ffffff;
+            padding: 12px 16px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: var(--font-sans);
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 4px 12px rgba(157, 50, 102, 0.15);
+        }
+
+        .new-chat-btn:hover {
+            background: var(--accent-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(157, 50, 102, 0.25);
+        }
+
+        .new-chat-btn:active {
+            transform: translateY(0);
+        }
+
+        .suggestions {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .suggestions-title {
+            font-family: var(--font-display);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-secondary);
+            font-weight: 600;
+            margin-bottom: 4px;
+            padding-left: 8px;
+        }
+
+        .suggestion-chip {
+            background: rgba(255, 255, 255, 0.4);
+            border: 1px solid rgba(80, 24, 84, 0.04);
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            color: var(--sidebar-text);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 500;
+        }
+
+        .suggestion-chip:hover {
+            background: rgba(255, 255, 255, 0.8);
+            color: var(--accent-color);
+            border-color: rgba(157, 50, 102, 0.15);
+            transform: translateX(2px);
+        }
+
+        /* Main Workspace Panel */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            margin: 14px 14px 14px 0;
+            background: var(--panel-bg);
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-md);
+            overflow: hidden;
+            position: relative;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* Top Header Bar */
+        .panel-header {
+            height: 56px;
+            padding: 0 24px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #ffffff;
+            z-index: 5;
+            flex-shrink: 0;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--sidebar-text);
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 8px;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+
+        .mobile-menu-btn:hover {
+            background: var(--accent-light);
+        }
+
+        .engine-title {
+            font-family: var(--font-display);
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .engine-badge {
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--accent-color);
+            background: var(--accent-light);
+            padding: 2px 6px;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+
+        .status-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+            background: #fcf8fc;
+            border: 1px solid rgba(80, 24, 84, 0.04);
+            padding: 6px 12px;
+            border-radius: 999px;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.2s;
+        }
+
+        .status-indicator:hover {
+            background: #faf3fa;
+            border-color: rgba(80, 24, 84, 0.1);
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background-color: #10b981;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: calc(100% + 6px);
+            background-color: #ffffff;
+            min-width: 170px;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            z-index: 20;
+            overflow: hidden;
+            animation: fadeIn 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .dropdown-content.show {
+            display: block;
+        }
+
+        .dropdown-item {
+            padding: 10px 14px;
+            font-size: 0.8rem;
+            color: var(--text-primary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: background 0.15s;
+        }
+
+        .dropdown-item:hover {
+            background: var(--accent-light);
+            color: var(--accent-color);
+        }
+
+        .dropdown-item.active {
+            font-weight: 600;
+            color: var(--accent-color);
+        }
+
+        /* Chat Threads Container */
+        .chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 36px;
+            scroll-behavior: smooth;
+        }
+
+        .chat-container::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        .chat-container::-webkit-scrollbar-thumb {
+            background: rgba(80, 24, 84, 0.08);
+            border-radius: 10px;
+        }
+
+        .chat-container::-webkit-scrollbar-thumb:hover {
+            background: rgba(80, 24, 84, 0.15);
+        }
+
+        /* Empty state (Welcome Hero) */
+        .welcome-hero {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            max-width: 680px;
+            margin: auto;
+            padding: 40px 20px;
+            text-align: center;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .welcome-banner {
+            width: 140px;
+            height: 140px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .welcome-banner svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .welcome-title {
+            font-family: var(--font-display);
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 10px;
+            letter-spacing: -0.5px;
+        }
+
+        .welcome-subtitle {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: 30px;
+            max-width: 480px;
+        }
+
+        .welcome-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            width: 100%;
+        }
+
+        .welcome-card {
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            padding: 14px 16px;
+            border-radius: 12px;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .welcome-card:hover {
+            border-color: var(--accent-color);
+            background: var(--accent-light);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .welcome-card-title {
+            font-family: var(--font-display);
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .welcome-card-desc {
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        /* Message Bubbles styling */
+        .message-wrapper {
+            display: flex;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .message {
+            max-width: 768px;
+            width: 100%;
+            display: flex;
+            gap: 16px;
+            opacity: 0;
+            transform: translateY(10px);
+            animation: slideUpFade 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes slideUpFade {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* User Message (Right-aligned bubble) */
+        .user-message {
+            justify-content: flex-end;
+        }
+
+        .user-message .message {
+            justify-content: flex-end;
+        }
+
+        .user-message .message-content-wrapper {
+            background: var(--user-msg-bg);
+            border: 1px solid rgba(157, 50, 102, 0.08);
+            border-radius: 16px;
+            padding: 12px 18px;
+            max-width: 80%;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .user-message .message-content {
+            color: var(--sidebar-text);
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        /* Bot Message (Left-aligned, clean non-bubble content) */
+        .bot-message-wrapper {
+            justify-content: flex-start;
+        }
+
+        .avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: 700;
+            flex-shrink: 0;
+            font-family: var(--font-display);
+            user-select: none;
+        }
+
+        .bot-avatar {
+            background: var(--accent-light);
+            color: var(--accent-color);
+            border: 1px solid rgba(157, 50, 102, 0.15);
+        }
+
+        .bot-message-content {
+            flex: 1;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            line-height: 1.6;
+            padding-top: 4px;
+        }
+
+        /* Typography & Formatting in responses */
+        .bot-message-content p {
+            margin-bottom: 12px;
+        }
+
+        .bot-message-content p:last-child {
+            margin-bottom: 0;
+        }
+
+        code {
+            font-family: 'JetBrains Mono', monospace;
+            background-color: var(--accent-light);
+            border: 1px solid rgba(157, 50, 102, 0.1);
+            padding: 2px 6px;
+            border-radius: 6px;
+            color: var(--accent-color);
+            font-size: 0.88em;
+            font-weight: 500;
+        }
+
+        strong {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        /* Input Area Container */
+        .input-container {
+            padding: 16px 24px 24px;
+            background: linear-gradient(180deg, rgba(255,255,255,0) 0%, #ffffff 50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .input-box {
+            max-width: 768px;
+            width: 100%;
+            position: relative;
+            display: flex;
+            align-items: center;
+            background: var(--input-bg);
+            border: 1px solid var(--input-border);
+            border-radius: 12px;
+            box-shadow: var(--shadow-sm);
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .input-box:focus-within {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px rgba(157, 50, 102, 0.12), var(--shadow-md);
+        }
+
+        .chat-input {
+            width: 100%;
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            padding: 14px 52px 14px 16px;
+            font-size: 0.95rem;
+            outline: none;
+            font-family: var(--font-sans);
+        }
+
+        .chat-input::placeholder {
+            color: var(--text-secondary);
+            opacity: 0.65;
+        }
+
+        .send-btn {
+            position: absolute;
+            right: 8px;
+            background: var(--accent-color);
+            border: none;
+            color: #ffffff;
+            cursor: pointer;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .send-btn:hover {
+            background: var(--accent-hover);
+            transform: scale(1.02);
+        }
+
+        .send-btn:active {
+            transform: scale(0.98);
+        }
+
+        .send-btn svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .footer-text {
+            text-align: center;
+            font-size: 11px;
+            color: var(--text-secondary);
+            opacity: 0.7;
+            margin-top: 12px;
+            letter-spacing: 0.2px;
+            font-family: var(--font-sans);
+        }
+
+        /* Loading / Typing Indicator */
+        .typing-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 6px 12px;
+            background: var(--accent-light);
+            border: 1px solid rgba(157, 50, 102, 0.08);
+            border-radius: 12px;
+            height: 28px;
+        }
+
+        .dot {
+            width: 6px;
+            height: 6px;
+            background: var(--accent-color);
+            border-radius: 50%;
+            animation: bounce 1.4s infinite ease-in-out both;
+            opacity: 0.6;
+        }
+
+        .dot:nth-child(1) { animation-delay: -0.32s; }
+        .dot:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0.6); opacity: 0.3; }
+            40% { transform: scale(1.1); opacity: 1; }
+        }
+
+        /* Sidebar Backdrop (Mobile Drawer) */
+        .sidebar-backdrop {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(80, 24, 84, 0.15);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            z-index: 99;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .sidebar-backdrop.active {
+            display: block;
+            opacity: 1;
+        }
+
+        /* Media Queries for Responsiveness */
+        @media (max-width: 768px) {
+            .mobile-menu-btn {
+                display: flex;
+            }
+
+            .sidebar {
+                position: fixed;
+                top: 0;
+                left: -260px;
+                bottom: 0;
+                width: 260px;
+                background: linear-gradient(180deg, #f2e0f4 0%, #e5d2eb 100%);
+                transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+                z-index: 100;
+                box-shadow: var(--shadow-lg);
+                border-right: 1px solid var(--border-color);
+            }
+
+            .sidebar.active {
+                transform: translateX(260px);
+            }
+
+            .main-content {
+                margin: 0;
+                border-radius: 0;
+                border: none;
+            }
+
+            .welcome-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .panel-header {
+                padding: 0 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="toggleSidebar()"></div>
+
+    <div class="app-container">
+        <!-- Left Sidebar -->
+        <div class="sidebar">
+            <div class="logo">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="color: var(--accent-color)">
+                    <rect x="2" y="2" width="20" height="20" rx="6" stroke="currentColor" stroke-width="2" />
+                    <circle cx="12" cy="12" r="4" fill="currentColor" opacity="0.15" />
+                    <path d="M8 12H16" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                    <path d="M12 8V16" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                </svg>
+                <strong>Decodes</strong><span>Logic</span>
+            </div>
+            
+            <button class="new-chat-btn" onclick="clearChat(); closeSidebarOnMobile();">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                New Session
+            </button>
+            
+            <div class="suggestions">
+                <div class="suggestions-title">Quick Inquiries</div>
+                <div class="suggestion-chip" onclick="submitQuery('What is AI?'); closeSidebarOnMobile();">What is AI?</div>
+                <div class="suggestion-chip" onclick="submitQuery('Tell me a joke'); closeSidebarOnMobile();">Tell me a joke</div>
+                <div class="suggestion-chip" onclick="submitQuery('How old are you?'); closeSidebarOnMobile();">How old are you?</div>
+                <div class="suggestion-chip" onclick="submitQuery('Are you alive?'); closeSidebarOnMobile();">Are you alive?</div>
+            </div>
+
+            <!-- API settings panel -->
+            <div class="sidebar-settings">
+                <div class="settings-title">Gemini Integration</div>
+                <div class="api-key-box">
+                    <input type="password" id="apiKeyInput" placeholder="Paste Gemini API Key..." />
+                    <button id="connectKeyBtn" onclick="connectApiKey()">Connect</button>
+                </div>
+                <div class="llm-status-badge">
+                    <span class="status-dot offline" id="statusDot"></span>
+                    <span id="statusText">LLM Offline</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Workspace -->
+        <div class="main-content">
+            <!-- Header bar -->
+            <div class="panel-header">
+                <div class="header-left">
+                    <button class="mobile-menu-btn" onclick="toggleSidebar()" aria-label="Toggle Sidebar">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="3" y1="12" x2="21" y2="12"></line>
+                            <line x1="3" y1="6" x2="21" y2="6"></line>
+                            <line x1="3" y1="18" x2="21" y2="18"></line>
+                        </svg>
+                    </button>
+                    <span class="engine-title">Decodes Logic Engine</span>
+                    <span class="engine-badge">v1.0.0</span>
+                </div>
+                
+                <div class="header-right">
+                    <div class="status-dropdown">
+                        <div class="status-indicator" onclick="toggleDropdown(event)">
+                            <span class="status-dot"></span>
+                            <span id="selectedMode">Deterministic Mode</span>
+                        </div>
+                        <div class="dropdown-content" id="modeDropdown">
+                            <div class="dropdown-item active" onclick="setMode('Deterministic Mode')">
+                                Deterministic Mode
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                            </div>
+                            <div class="dropdown-item" onclick="setMode('Heuristic Mode')">
+                                Heuristic Mode
+                            </div>
+                            <div class="dropdown-item" onclick="setMode('Hybrid Pipeline')">
+                                Hybrid Pipeline
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chat screen -->
+            <div class="chat-container" id="chatContainer">
+                <!-- Welcome Hero (Default state) -->
+                <div id="welcomeHero" class="welcome-hero">
+                    <div class="welcome-banner">
+                        <svg width="100%" height="100%" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <defs>
+                                <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+                                    <stop offset="0%" stop-color="#9d3266" stop-opacity="0.25"/>
+                                    <stop offset="100%" stop-color="#9d3266" stop-opacity="0"/>
+                                </radialGradient>
+                                <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" stop-color="#9d3266"/>
+                                    <stop offset="100%" stop-color="#501854"/>
+                                </linearGradient>
+                                <linearGradient id="grad2" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" stop-color="#e5d2eb"/>
+                                    <stop offset="100%" stop-color="#9d3266"/>
+                                </linearGradient>
+                            </defs>
+                            <circle cx="60" cy="60" r="50" fill="url(#glow)" />
+                            <line x1="20" y1="60" x2="100" y2="60" stroke="rgba(80, 24, 84, 0.06)" stroke-width="1" stroke-dasharray="2 2" />
+                            <line x1="60" y1="20" x2="60" y2="100" stroke="rgba(80, 24, 84, 0.06)" stroke-width="1" stroke-dasharray="2 2" />
+                            <path d="M35 45 L60 30 L85 45 L60 85 Z" stroke="url(#grad2)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="100" stroke-dashoffset="0">
+                                <animate attributeName="stroke-dashoffset" values="200;0" dur="4s" repeatCount="indefinite" />
+                            </path>
+                            <circle cx="35" cy="45" r="5" fill="#ffffff" stroke="#9d3266" stroke-width="2" />
+                            <circle cx="85" cy="45" r="5" fill="#ffffff" stroke="#9d3266" stroke-width="2" />
+                            <circle cx="60" cy="30" r="4" fill="#ffffff" stroke="#501854" stroke-width="2" />
+                            <circle cx="60" cy="60" r="10" fill="url(#grad1)">
+                                <animate attributeName="r" values="9;11;9" dur="3s" repeatCount="indefinite" />
+                            </circle>
+                            <circle cx="60" cy="60" r="4" fill="#ffffff" />
+                            <circle cx="60" cy="85" r="6" fill="#ffffff" stroke="#501854" stroke-width="2" />
+                        </svg>
+                    </div>
+                    <h1 class="welcome-title">Deterministic Logic Workspace</h1>
+                    <p class="welcome-subtitle">
+                        An advanced, O(1) rule-lookup engine designed for immediate, traceable responses. Explore developer information or query general facts.
+                    </p>
+                    <div class="welcome-grid">
+                        <div class="welcome-card" onclick="submitQuery('What is AI?')">
+                            <div class="welcome-card-title">Explain AI Concepts</div>
+                            <div class="welcome-card-desc">Clarify basic definitions and structures.</div>
+                        </div>
+                        <div class="welcome-card" onclick="submitQuery('What is a rule based system?')">
+                            <div class="welcome-card-title">Rule-Based Architecture</div>
+                            <div class="welcome-card-desc">Understand how this application processes inputs.</div>
+                        </div>
+                        <div class="welcome-card" onclick="submitQuery('Tell me a joke')">
+                            <div class="welcome-card-title">Programmer Humour</div>
+                            <div class="welcome-card-desc">Retrieve a deterministic joke from the local base.</div>
+                        </div>
+                        <div class="welcome-card" onclick="submitQuery('help')">
+                            <div class="welcome-card-title">System Guide</div>
+                            <div class="welcome-card-desc">List all supported command actions and exits.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Message Input Area -->
+            <div class="input-container">
+                <div class="input-box">
+                    <input type="text" id="chatInput" class="chat-input" placeholder="Query the logic workspace..." autocomplete="off" autofocus>
+                    <button class="send-btn" id="sendBtn" title="Send Query">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="22" y1="2" x2="11" y2="13"></line>
+                            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                        </svg>
+                    </button>
+                </div>
+                <div class="footer-text">
+                    DecodeLabs Industrial Training Kit | Batch 2026 | Project 1
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const chatContainer = document.getElementById('chatContainer');
+        const chatInput = document.getElementById('chatInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const sidebar = document.querySelector('.sidebar');
+        const backdrop = document.getElementById('sidebarBackdrop');
+
+        // Sidebar Navigation
+        function toggleSidebar() {
+            sidebar.classList.toggle('active');
+            backdrop.classList.toggle('active');
+        }
+
+        function closeSidebarOnMobile() {
+            if (window.innerWidth <= 768) {
+                sidebar.classList.remove('active');
+                backdrop.classList.remove('active');
+            }
+        }
+
+        // Dropdown Mode Selection (Microinteraction)
+        function toggleDropdown(event) {
+            event.stopPropagation();
+            document.getElementById('modeDropdown').classList.toggle('show');
+        }
+
+        function setMode(modeText) {
+            document.getElementById('selectedMode').innerText = modeText;
+            const items = document.querySelectorAll('.dropdown-item');
+            items.forEach(item => {
+                item.classList.remove('active');
+                // Remove existing checkmark if any
+                const check = item.querySelector('svg');
+                if (check) check.remove();
+                
+                if (item.innerText.trim() === modeText) {
+                    item.classList.add('active');
+                    item.innerHTML += `
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                    `;
+                }
+            });
+            document.getElementById('modeDropdown').classList.remove('show');
+        }
+
+        // Close dropdown when clicking outside
+        window.addEventListener('click', () => {
+            document.getElementById('modeDropdown').classList.remove('show');
+        });
+
+        // Chat Logic
+        function setInput(text) {
+            chatInput.value = text;
+            chatInput.focus();
+        }
+
+        function submitQuery(text) {
+            setInput(text);
+            handleSend();
+        }
+
+        function scrollToBottom() {
+            chatContainer.scrollTo({
+                top: chatContainer.scrollHeight,
+                behavior: 'smooth'
+            });
+        }
+
+        function clearChat() {
+            chatContainer.innerHTML = `
+                <div id="welcomeHero" class="welcome-hero">
+                    <div class="welcome-banner">
+                        <svg width="100%" height="100%" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <defs>
+                                <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+                                    <stop offset="0%" stop-color="#9d3266" stop-opacity="0.25"/>
+                                    <stop offset="100%" stop-color="#9d3266" stop-opacity="0"/>
+                                </radialGradient>
+                                <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" stop-color="#9d3266"/>
+                                    <stop offset="100%" stop-color="#501854"/>
+                                </linearGradient>
+                                <linearGradient id="grad2" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" stop-color="#e5d2eb"/>
+                                    <stop offset="100%" stop-color="#9d3266"/>
+                                </linearGradient>
+                            </defs>
+                            <circle cx="60" cy="60" r="50" fill="url(#glow)" />
+                            <line x1="20" y1="60" x2="100" y2="60" stroke="rgba(80, 24, 84, 0.06)" stroke-width="1" stroke-dasharray="2 2" />
+                            <line x1="60" y1="20" x2="60" y2="100" stroke="rgba(80, 24, 84, 0.06)" stroke-width="1" stroke-dasharray="2 2" />
+                            <path d="M35 45 L60 30 L85 45 L60 85 Z" stroke="url(#grad2)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="100" stroke-dashoffset="0">
+                                <animate attributeName="stroke-dashoffset" values="200;0" dur="4s" repeatCount="indefinite" />
+                            </path>
+                            <circle cx="35" cy="45" r="5" fill="#ffffff" stroke="#9d3266" stroke-width="2" />
+                            <circle cx="85" cy="45" r="5" fill="#ffffff" stroke="#9d3266" stroke-width="2" />
+                            <circle cx="60" cy="30" r="4" fill="#ffffff" stroke="#501854" stroke-width="2" />
+                            <circle cx="60" cy="60" r="10" fill="url(#grad1)">
+                                <animate attributeName="r" values="9;11;9" dur="3s" repeatCount="indefinite" />
+                            </circle>
+                            <circle cx="60" cy="60" r="4" fill="#ffffff" />
+                            <circle cx="60" cy="85" r="6" fill="#ffffff" stroke="#501854" stroke-width="2" />
+                        </svg>
+                    </div>
+                    <h1 class="welcome-title">Deterministic Logic Workspace</h1>
+                    <p class="welcome-subtitle">
+                        An advanced, O(1) rule-lookup engine designed for immediate, traceable responses. Explore developer information or query general facts.
+                    </p>
+                    <div class="welcome-grid">
+                        <div class="welcome-card" onclick="submitQuery('What is AI?')">
+                            <div class="welcome-card-title">Explain AI Concepts</div>
+                            <div class="welcome-card-desc">Clarify basic definitions and structures.</div>
+                        </div>
+                        <div class="welcome-card" onclick="submitQuery('What is a rule based system?')">
+                            <div class="welcome-card-title">Rule-Based Architecture</div>
+                            <div class="welcome-card-desc">Understand how this application processes inputs.</div>
+                        </div>
+                        <div class="welcome-card" onclick="submitQuery('Tell me a joke')">
+                            <div class="welcome-card-title">Programmer Humour</div>
+                            <div class="welcome-card-desc">Retrieve a deterministic joke from the local base.</div>
+                        </div>
+                        <div class="welcome-card" onclick="submitQuery('help')">
+                            <div class="welcome-card-title">System Guide</div>
+                            <div class="welcome-card-desc">List all supported command actions and exits.</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function appendUserMessage(text) {
+            // Remove welcome hero
+            const welcome = document.getElementById('welcomeHero');
+            if (welcome) welcome.remove();
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'message-wrapper user-message';
+            wrapper.innerHTML = `
+                <div class="message">
+                    <div class="message-content-wrapper">
+                        <div class="message-content">${escapeHTML(text)}</div>
+                    </div>
+                </div>
+            `;
+            chatContainer.appendChild(wrapper);
+            scrollToBottom();
+        }
+
+        function showTypingIndicator() {
+            const welcome = document.getElementById('welcomeHero');
+            if (welcome) welcome.remove();
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'message-wrapper typing-indicator-wrapper';
+            wrapper.id = 'typingIndicator';
+            wrapper.innerHTML = `
+                <div class="message">
+                    <div class="avatar bot-avatar">D</div>
+                    <div class="bot-message-content">
+                        <div class="typing-indicator">
+                            <div class="dot"></div>
+                            <div class="dot"></div>
+                            <div class="dot"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            chatContainer.appendChild(wrapper);
+            scrollToBottom();
+            return wrapper;
+        }
+
+        function appendBotMessage(text) {
+            const welcome = document.getElementById('welcomeHero');
+            if (welcome) welcome.remove();
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'message-wrapper bot-message-wrapper';
+            
+            // Format text (markdown code blocks and bold)
+            let formattedText = escapeHTML(text)
+                .replace(/\n/g, '<br>')
+                .replace(/\`(.*?)\`/g, '<code>$1</code>')
+                .replace(/\*(.*?)\*/g, '<strong>$1</strong>');
+
+            wrapper.innerHTML = `
+                <div class="message">
+                    <div class="avatar bot-avatar">D</div>
+                    <div class="bot-message-content">
+                        <p>${formattedText}</p>
+                    </div>
+                </div>
+            `;
+            chatContainer.appendChild(wrapper);
+            scrollToBottom();
+        }
+
+        function escapeHTML(str) {
+            return str.replace(/[&<>'"]/g, 
+                tag => ({
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    "'": '&#39;',
+                    '"': '&quot;'
+                }[tag])
+            );
+        }
+
+        async function handleSend() {
+            const message = chatInput.value.trim();
+            if (!message) return;
+
+            chatInput.value = '';
+            appendUserMessage(message);
+
+            const typingEl = showTypingIndicator();
+
+            // Simulate slight system response lookup overhead (400ms) for UI realism
+            await new Promise(r => setTimeout(r, 400));
+
+            try {
+                // Determine API endpoint. If running via file:// or outside local port 8085, connect to http://localhost:8085/chat
+                const apiEndpoint = window.location.protocol === 'file:' || window.location.port !== '8085'
+                    ? 'http://localhost:8085/chat'
+                    : '/chat';
+
+                const api_key = localStorage.getItem('gemini_api_key') || '';
+                const mode = document.getElementById('selectedMode').innerText.trim();
+
+                const response = await fetch(apiEndpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message, api_key, mode })
+                });
+                
+                const data = await response.json();
+                
+                typingEl.remove();
+                
+                if (data.response) {
+                    appendBotMessage(data.response);
+                } else {
+                    appendBotMessage("System error: Could not retrieve response from rule engine.");
+                }
+            } catch (error) {
+                typingEl.remove();
+                appendBotMessage("Connection error: The local logic pipeline could not be reached.");
+            }
+        }
+
+        async function connectApiKey() {
+            const apiKeyInput = document.getElementById('apiKeyInput');
+            const statusDot = document.getElementById('statusDot');
+            const statusText = document.getElementById('statusText');
+            const connectBtn = document.getElementById('connectKeyBtn');
+            
+            const key = apiKeyInput.value.trim();
+            if (!key) {
+                localStorage.removeItem('gemini_api_key');
+                statusDot.className = 'status-dot offline';
+                statusText.innerText = 'LLM Offline';
+                return;
+            }
+            
+            statusDot.className = 'status-dot connecting';
+            statusText.innerText = 'Connecting...';
+            connectBtn.disabled = true;
+            
+            try {
+                const apiEndpoint = window.location.protocol === 'file:' || window.location.port !== '8085'
+                    ? 'http://localhost:8085/verify-key'
+                    : '/verify-key';
+                    
+                const response = await fetch(apiEndpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ api_key: key })
+                });
+                
+                const data = await response.json();
+                if (response.ok && data.status === 'connected') {
+                    localStorage.setItem('gemini_api_key', key);
+                    statusDot.className = 'status-dot online';
+                    statusText.innerText = 'Gemini Active';
+                } else {
+                    localStorage.removeItem('gemini_api_key');
+                    statusDot.className = 'status-dot offline';
+                    statusText.innerText = 'Failed: Invalid Key';
+                }
+            } catch (err) {
+                localStorage.removeItem('gemini_api_key');
+                statusDot.className = 'status-dot offline';
+                statusText.innerText = 'Connection Error';
+            } finally {
+                connectBtn.disabled = false;
+            }
+        }
+
+        // Initialize state on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedKey = localStorage.getItem('gemini_api_key');
+            if (savedKey) {
+                document.getElementById('apiKeyInput').value = savedKey;
+                connectApiKey();
+            }
+        });
+
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') handleSend();
+        });
+
+        sendBtn.addEventListener('click', handleSend);
+    </script>
+</body>
+</html>
